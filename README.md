@@ -4,22 +4,29 @@ A C++ command-line simulation for prioritizing patients and managing vaccine sup
 
 ## Overview
 
-The program models three connected Texas regions—Austin, Dallas, and Houston—and allows a user to add patients, simulate changing outbreak conditions, rank patients by risk, and move vaccine supplies between connected regions.
+The Crisis Response Engine models three connected Texas regions: Austin, Dallas, and Houston.
+
+Users can add patients, simulate changing outbreak conditions, rank patients based on medical and regional risk factors, and transfer vaccine supplies between connected cities.
 
 ## Features
 
 - Stores regional data using `std::map`
-- Stores patients with custom `Person` and `Region` structs
-- Calculates patient risk using age, health status, essential-worker status, exposure level, and regional outbreak level
-- Uses `std::priority_queue` to rank patients by risk score
-- Represents transportation connections between regions with an adjacency-list graph
-- Simulates crises by increasing outbreak levels and reducing vaccine supplies
-- Validates menu and numeric input
-- Transfers vaccines only between connected regions with sufficient supply
+- Stores patients using custom `Person` and `Region` structs
+- Uses an adjacency-list graph to represent connections between regions
+- Calculates patient risk using:
+  - Age
+  - Immunocompromised status
+  - Essential-worker status
+  - Exposure level
+  - Regional outbreak level
+- Uses `std::priority_queue` with a custom comparator to rank patients by risk
+- Simulates changing outbreak conditions and vaccine shortages
+- Transfers vaccine supplies between connected regions
+- Validates numeric and menu input
 
-## Menu
+## Program Menu
 
-The application supports:
+The program allows users to:
 
 1. Add Patient
 2. View Regions
@@ -28,21 +35,50 @@ The application supports:
 5. Transfer Vaccines
 6. Exit
 
+## Example Output
+
+```text
+-REGION CONNECTIONS-
+Austin connected to: Dallas Houston
+Dallas connected to: Houston
+Houston connected to: Austin
+
+1. Add Patient
+2. View Regions
+3. Generate Crisis
+4. Show Priority Queue
+5. Transfer Vaccines
+6. Exit
+Choice:
+```
+
+## Technologies and Concepts
+
+- C++
+- Data Structures
+- Graphs
+- Priority Queues
+- Maps
+- Vectors
+- Custom Comparators
+- Structs
+- Random Simulation
+- Input Validation
+
 ## Build and Run
 
-Compile with a C++11-compatible compiler:
+Compile using a C++11-compatible compiler:
 
 ```bash
 g++ -std=c++11 CrisisResponseEngine.cpp -o crisis_response
+```
+
+Run the program:
+
+```bash
 ./crisis_response
 ```
 
-## Concepts Used
+## Purpose
 
-- C++ structs
-- Maps and vectors
-- Priority queues and custom comparators
-- Graph representation
-- Random simulation
-- Input validation
-- Command-line application design
+This project was created to practice applying data structures to a simulated real-world problem involving resource allocation, risk prioritization, and connections between regions.
