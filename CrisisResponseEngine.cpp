@@ -1,9 +1,9 @@
 /*
 Nathan Sanchez
-This program creates an outbreak condition and allows the user to input
-patient data. It then prints out the priority queue of people based on
-personal and regional risk factors. It also allows vaccine distribution
-by transferring vaccines to and from connected regions.
+
+This program simulates outbreak conditions across connected regions.
+Users can enter patient data, view regions, generate crises, rank patients
+by risk, and transfer vaccines between connected regions.
 */
 
 #include <iostream>
@@ -17,12 +17,15 @@ by transferring vaccines to and from connected regions.
 
 using namespace std;
 
+// Reads any integer from the user.
 int readInt(string prompt)
 {
     int value;
+
     while (true)
     {
         cout << prompt;
+
         if (cin >> value)
         {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -30,17 +33,21 @@ int readInt(string prompt)
         }
 
         cout << "Please enter a valid number." << endl;
+
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 }
 
+// Reads an integer within a given range.
 int readInt(int minValue, int maxValue, string prompt)
 {
     int value;
+
     while (true)
     {
         cout << prompt;
+
         if (cin >> value && value >= minValue && value <= maxValue)
         {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -49,25 +56,29 @@ int readInt(int minValue, int maxValue, string prompt)
 
         cout << "Please enter a number from "
              << minValue << " to " << maxValue << "." << endl;
+
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 }
 
+// Reads a full line of text.
 string readLine(string prompt)
 {
     string value;
+
     cout << prompt;
     getline(cin, value);
+
     return value;
 }
 
+// Generates a random integer in the given range.
 int randInt(int minValue, int maxValue)
 {
     return minValue + rand() % (maxValue - minValue + 1);
 }
 
-// Store values for people
 struct Person
 {
     string name;
@@ -78,7 +89,6 @@ struct Person
     int riskScore;
 };
 
-// Store values for regions
 struct Region
 {
     string name;
@@ -87,113 +97,96 @@ struct Region
     vector<Person> residents;
 };
 
-// Compare structs based on riskScore
+// Places patients with higher risk scores first.
 struct CompareRisk
 {
-    bool operator()(Person a, Person b)
+    bool operator()(const Person& a, const Person& b) const
     {
         return a.riskScore < b.riskScore;
     }
 };
 
-// Adds all the factors that affect the riskScore
-int calculateRisk(Person p, int outbreakLevel)
+// Calculates a patient's risk score.
+int calculateRisk(const Person& person, int outbreakLevel)
 {
     int score = 0;
 
-    if (p.age >= 65)
+    if (person.age >= 65)
     {
         score += 40;
     }
-    else if (p.age >= 50)
+    else if (person.age >= 50)
     {
         score += 25;
     }
 
-    if (p.immunocompromised)
+    if (person.immunocompromised)
     {
         score += 35;
     }
 
-    if (p.essentialWorker)
+    if (person.essentialWorker)
     {
         score += 15;
     }
 
-    score += p.exposureLevel * 5;
+    score += person.exposureLevel * 5;
     score += outbreakLevel;
 
     return score;
 }
 
-// Generate random outbreak increase and vaccine loss
+// Randomly increases outbreaks and decreases vaccine supplies.
 void generateCrisis(map<string, Region>& regions)
 {
     for (auto& regionPair : regions)
     {
         Region& region = regionPair.second;
 
-        int increase = randInt(5, 25);
-        region.outbreakLevel += increase;
+        region.outbreakLevel += randInt(5, 25);
 
-        int loss = randInt(0, 10);
+        int vaccineLoss = randInt(0, 10);
 
-        if (region.vaccineSupply - loss >= 0)
+        if (vaccineLoss <= region.vaccineSupply)
         {
-            region.vaccineSupply -= loss;
+            region.vaccineSupply -= vaccineLoss;
         }
 
-        for (int i = 0; i < (int)region.residents.size(); i++)
+        for (Person& person : region.residents)
         {
-            region.residents[i].riskScore =
-                calculateRisk(
-                    region.residents[i],
-                    region.outbreakLevel
-                );
+            person.riskScore =
+                calculateRisk(person, region.outbreakLevel);
         }
     }
 }
 
-// Displays the parts of the person struct
-void displayPerson(Person p)
+// Displays patient information.
+void displayPerson(const Person& person)
 {
-    cout << "Name: " << p.name << endl;
-    cout << "Risk Score: " << p.riskScore << endl;
-    cout << "Age: " << p.age << endl;
-    cout << "Exposure Level: " << p.exposureLevel << endl;
+    cout << "Name: " << person.name << endl;
+    cout << "Risk Score: " << person.riskScore << endl;
+    cout << "Age: " << person.age << endl;
+    cout << "Exposure Level: " << person.exposureLevel << endl;
 
-    if (p.immunocompromised)
-    {
-        cout << "Immunocompromised: YES" << endl;
-    }
-    else
-    {
-        cout << "Immunocompromised: NO" << endl;
-    }
+    cout << "Immunocompromised: "
+         << (person.immunocompromised ? "YES" : "NO") << endl;
 
-    if (p.essentialWorker)
-    {
-        cout << "Essential Worker: YES" << endl;
-    }
-    else
-    {
-        cout << "Essential Worker: NO" << endl;
-    }
+    cout << "Essential Worker: "
+         << (person.essentialWorker ? "YES" : "NO") << endl;
 
     cout << endl;
 }
 
-// Displays the parts of the region struct
-void displayRegion(Region r)
+// Displays region information.
+void displayRegion(const Region& region)
 {
-    cout << "Region: " << r.name << endl;
-    cout << "Vaccines Available: " << r.vaccineSupply << endl;
-    cout << "Outbreak Level: " << r.outbreakLevel << endl;
-    cout << "Population Stored: " << r.residents.size() << endl;
+    cout << "Region: " << region.name << endl;
+    cout << "Vaccines Available: " << region.vaccineSupply << endl;
+    cout << "Outbreak Level: " << region.outbreakLevel << endl;
+    cout << "Population Stored: " << region.residents.size() << endl;
     cout << endl;
 }
 
-// Calls all of the user options and creates the regions
 int main()
 {
     srand((unsigned int)time(0));
@@ -227,11 +220,11 @@ int main()
 
     cout << "-REGION CONNECTIONS-" << endl;
 
-    for (auto node : worldGraph)
+    for (const auto& node : worldGraph)
     {
         cout << node.first << " connected to: ";
 
-        for (string connection : node.second)
+        for (const string& connection : node.second)
         {
             cout << connection << " ";
         }
@@ -251,7 +244,6 @@ int main()
 
         int choice = readInt("Choice: ");
 
-        // Adds patients and puts them into regions
         if (choice == 1)
         {
             Person newPerson;
@@ -279,13 +271,12 @@ int main()
 
             if (regions.count(regionName))
             {
-                newPerson.riskScore =
-                    calculateRisk(
-                        newPerson,
-                        regions[regionName].outbreakLevel
-                    );
+                Region& region = regions[regionName];
 
-                regions[regionName].residents.push_back(newPerson);
+                newPerson.riskScore =
+                    calculateRisk(newPerson, region.outbreakLevel);
+
+                region.residents.push_back(newPerson);
 
                 cout << "\nPatient added." << endl;
             }
@@ -294,38 +285,32 @@ int main()
                 cout << "\nRegion not found." << endl;
             }
         }
-
-        // Calls displayRegion
         else if (choice == 2)
         {
             cout << "\n-REGIONS-" << endl;
 
-            for (auto regionPair : regions)
+            for (const auto& regionPair : regions)
             {
                 displayRegion(regionPair.second);
             }
         }
-
-        // Calls generateCrisis
         else if (choice == 3)
         {
             generateCrisis(regions);
 
             cout << "\nCrisis generated." << endl;
         }
-
-        // Creates a priority queue and puts people in order of risk factors
         else if (choice == 4)
         {
             priority_queue<Person, vector<Person>, CompareRisk> vaccineQueue;
 
-            for (auto regionPair : regions)
+            for (const auto& regionPair : regions)
             {
-                Region currentRegion = regionPair.second;
+                const Region& region = regionPair.second;
 
-                for (Person p : currentRegion.residents)
+                for (const Person& person : region.residents)
                 {
-                    vaccineQueue.push(p);
+                    vaccineQueue.push(person);
                 }
             }
 
@@ -333,26 +318,17 @@ int main()
 
             while (!vaccineQueue.empty())
             {
-                Person highestRisk = vaccineQueue.top();
-
-                displayPerson(highestRisk);
-
+                displayPerson(vaccineQueue.top());
                 vaccineQueue.pop();
             }
         }
-
-        // Moves vaccines to and from connected regions
         else if (choice == 5)
         {
-            string fromRegion;
-            string toRegion;
-            int amount;
-
             cout << "\n-TRANSFER VACCINES-" << endl;
 
-            fromRegion = readLine("Transfer From region: ");
-            toRegion = readLine("Transfer To region: ");
-            amount = readInt("Number of vaccines: ");
+            string fromRegion = readLine("Transfer From region: ");
+            string toRegion = readLine("Transfer To region: ");
+            int amount = readInt("Number of vaccines: ");
 
             if (!regions.count(fromRegion) || !regions.count(toRegion))
             {
@@ -366,11 +342,12 @@ int main()
             {
                 bool connected = false;
 
-                for (string neighbor : worldGraph[fromRegion])
+                for (const string& neighbor : worldGraph[fromRegion])
                 {
                     if (neighbor == toRegion)
                     {
                         connected = true;
+                        break;
                     }
                 }
 
@@ -389,17 +366,15 @@ int main()
 
                     cout << "\nTransfer successful." << endl;
                     cout << amount << " vaccines moved from "
-                         << fromRegion << " to " << toRegion << "."
-                         << endl;
+                         << fromRegion << " to "
+                         << toRegion << "." << endl;
                 }
             }
         }
-
         else if (choice == 6)
         {
             break;
         }
-
         else
         {
             cout << "\nInvalid choice." << endl;
